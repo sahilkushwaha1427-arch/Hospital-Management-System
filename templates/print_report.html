@@ -1,0 +1,199 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ hospital_name }} | Patient Report</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            color: #222;
+            margin: 0;
+            background: #f1f5f9;
+        }
+
+        .report {
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 35px;
+            background: white;
+            border: 1px solid #ddd;
+        }
+
+        .hospital-header {
+            text-align: center;
+            border-bottom: 3px solid #1769aa;
+            padding-bottom: 18px;
+        }
+
+        .hospital-header h1 {
+            margin: 0 0 8px;
+            color: #1769aa;
+            letter-spacing: 1px;
+        }
+
+        .hospital-header p {
+            margin: 5px 0;
+        }
+
+        .report-title {
+            text-align: center;
+            margin: 25px 0;
+        }
+
+        .details {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0 25px;
+        }
+
+        .details th,
+        .details td {
+            border: 1px solid #ddd;
+            padding: 11px;
+            text-align: left;
+        }
+
+        .details th {
+            width: 35%;
+            background: #f1f5f9;
+        }
+
+        .doctor-section {
+            margin-top: 25px;
+            padding: 18px;
+            border: 1px solid #ddd;
+        }
+
+        .signature {
+            text-align: right;
+            margin-top: 55px;
+        }
+
+        .footer {
+            text-align: center;
+            border-top: 1px solid #ddd;
+            margin-top: 35px;
+            padding-top: 15px;
+            font-size: 12px;
+        }
+
+        .print-button {
+            display: block;
+            margin: 20px auto;
+            padding: 12px 25px;
+            background: #1769aa;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .report {
+                max-width: none;
+                margin: 0;
+                padding: 0;
+                border: none;
+            }
+
+            .print-button {
+                display: none !important;
+            }
+
+            @page {
+                size: A4;
+                margin: 15mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button class="print-button" onclick="window.print()">
+        Print Report
+    </button>
+
+    <main class="report">
+        <header class="hospital-header">
+            <h1>{{ hospital_name }}</h1>
+            <p><strong>Caring for Life, Every Day</strong></p>
+            <p>{{ hospital_address }}</p>
+            <p>Phone: {{ hospital_phone }}</p>
+        </header>
+
+        <h2 class="report-title">PATIENT APPOINTMENT REPORT</h2>
+
+        <p>
+            <strong>Report Date:</strong>
+            {{ report_date }}
+        </p>
+
+        <table class="details">
+            <tr>
+                <th>Appointment ID</th>
+                <td>{{ appointment['appointment_id'] }}</td>
+            </tr>
+            <tr>
+                <th>Patient Name</th>
+                <td>{{ appointment['patient_name'] }}</td>
+            </tr>
+            <tr>
+                <th>Age</th>
+                <td>{{ appointment['age'] }}</td>
+            </tr>
+            <tr>
+                <th>Gender</th>
+                <td>{{ appointment['gender'] }}</td>
+            </tr>
+            <tr>
+                <th>Patient Phone</th>
+                <td>{{ appointment['patient_phone'] }}</td>
+            </tr>
+            <tr>
+                <th>Problem</th>
+                <td>{{ appointment['problem'] }}</td>
+            </tr>
+            <tr>
+                <th>Appointment Date</th>
+                <td>{{ appointment['appointment_date'] }}</td>
+            </tr>
+        </table>
+
+        <section class="doctor-section">
+            <h3>Consulting Doctor Details</h3>
+
+            <p>
+                <strong>Doctor Name:</strong>
+                {{ appointment['doctor_name'] }}
+            </p>
+
+            <p>
+                <strong>Specialization:</strong>
+                {{ appointment['specialization'] }}
+            </p>
+
+            <p>
+                <strong>Qualification:</strong>
+                {{ appointment['qualification'] }}
+            </p>
+        </section>
+
+        <div class="signature">
+            <p>________________________</p>
+            <p>Doctor's Signature</p>
+        </div>
+
+        <footer class="footer">
+            <p>{{ hospital_name }} — Thank you for choosing us.</p>
+            <p>This report contains patient information. Keep it confidential.</p>
+        </footer>
+    </main>
+</body>
+</html>

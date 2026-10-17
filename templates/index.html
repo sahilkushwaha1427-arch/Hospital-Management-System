@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediCare Hospital | Dashboard</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+        .hospital-print-header {
+            display: none;
+        }
+
+        .print-doctor-details {
+            margin-top: 18px;
+        }
+
+        .print-signature {
+            margin-top: 40px;
+            text-align: right;
+        }
+
+        .print-appointment-btn {
+            display: inline-block;
+            padding: 7px 12px;
+            border-radius: 5px;
+            background: #1769aa;
+            color: white;
+            text-decoration: none;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .hospital-print-header {
+                display: block !important;
+                text-align: center;
+                border-bottom: 2px solid #1769aa;
+                padding-bottom: 12px;
+                margin-bottom: 20px;
+            }
+
+            .hospital-print-header h1 {
+                color: #1769aa;
+                margin: 0 0 8px;
+                font-size: 24px;
+            }
+
+            .hospital-print-header p {
+                margin: 4px 0;
+                font-size: 12px;
+            }
+
+            .no-print,
+            .topbar,
+            .stats-grid,
+            .messages,
+            .panel:not(.print-target),
+            .footer,
+            .logout-form {
+                display: none !important;
+            }
+
+            body.print-patients #patientReport,
+            body.print-appointments #appointmentReport {
+                display: block !important;
+            }
+
+            body.print-patients #appointmentReport,
+            body.print-appointments #patientReport {
+                display: none !important;
+            }
+
+            #patientReport,
+            #appointmentReport {
+                border: none !important;
+                overflow: visible !important;
+            }
+
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            th, td {
+                border: 1px solid #777 !important;
+                padding: 7px;
+                color: black !important;
+                font-size: 11px;
+                overflow-wrap: anywhere;
+            }
+
+            th {
+                background: #e5e7eb !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+
+            @page {
+                size: A4;
+                margin: 12mm;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header class="topbar no-print">
+    <div>
+        <h1>🏥 MediCare Hospital</h1>
+        <p>Caring for Life, Every Day</p>
+        <p>Patient and Appointment Dashboard</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('logout') }}"
+          class="logout-form"
+          onsubmit="return confirm('Are you sure you want to logout?');">
+        <button type="submit" class="logout-btn">Logout</button>
+    </form>
+</header>
+
+<main class="container">
+
+    <section class="stats-grid no-print">
+        <div class="stat-card">
+            <h3>Total Patients</h3>
+            <p>{{ patient_count }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Doctors</h3>
+            <p>{{ doctor_count }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Total Appointments</h3>
+            <p>{{ appointment_count }}</p>
+        </div>
+    </section>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <section class="messages no-print">
+                {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                {% endfor %}
+            </section>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Patient Registration -->
+    <section class="panel no-print">
+        <h2>Register New Patient</h2>
+
+        <form method="POST" action="{{ url_for('add_patient') }}"
+              id="patientForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="name">Patient Name</label>
+                    <input type="text" id="name" name="name"
+                           maxlength="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Age</label>
+                    <input type="number" id="age" name="age"
+                           min="0" max="120" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Gender</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone"
+                           pattern="[0-9]{10}" minlength="10"
+                           maxlength="10" inputmode="numeric"
+                           required>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="problem">Health Problem</label>
+                    <textarea id="problem" name="problem"
+                              maxlength="300" required></textarea>
+                </div>
+            </div>
+
+            <button type="submit">Add Patient</button>
+        </form>
+    </section>
+
+    <!-- Patient Search -->
+    <section class="panel no-print">
+        <h2>Search Patients</h2>
+
+        <form method="GET" action="{{ url_for('index') }}"
+              class="search-form">
+            <input type="search" name="search"
+                   placeholder="Search by patient name or phone"
+                   value="{{ search }}"
+                   aria-label="Search patients">
+            <button type="submit">Search</button>
+            <a href="{{ url_for('index') }}" class="secondary-btn">Clear</a>
+        </form>
+    </section>
+
+    <!-- Patient Records -->
+    <section class="panel">
+        <div class="section-heading no-print">
+            <h2>Patient Records</h2>
+            <button type="button"
+                    onclick="printReport('patientReport')">
+                Print Patients
+            </button>
+        </div>
+
+        <div id="patientReport" class="table-wrapper">
+            <header class="hospital-print-header">
+                <h1>MEDICARE HOSPITAL</h1>
+                <p><strong>Caring for Life, Every Day</strong></p>
+                <p>Main Road, Greater Noida, Uttar Pradesh</p>
+                <p>Phone: 7756895432</p>
+                <hr>
+                <h2>Patient Records Report</h2>
+                <p>Report Date: {{ today }}</p>
+            </header>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Phone</th>
+                        <th>Problem</th>
+                        <th class="no-print">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.id }}</td>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.age }}</td>
+                        <td>{{ patient.gender }}</td>
+                        <td>{{ patient.phone }}</td>
+                        <td>{{ patient.problem }}</td>
+                        <td class="no-print">
+                            <form method="POST"
+                                  action="{{ url_for('delete_patient', patient_id=patient.id) }}"
+                                  onsubmit="return confirm('Delete this patient and their appointments?');">
+                                <button type="submit" class="delete-btn">
+                                    Delete
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">No patients found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Book Appointment -->
+    <section class="panel no-print">
+        <h2>Book Appointment</h2>
+
+        <form method="POST" action="{{ url_for('add_appointment') }}"
+              id="appointmentForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="patient_id">Select Patient</label>
+                    <select name="patient_id" id="patient_id" required>
+                        <option value="">Choose patient</option>
+                        {% for patient in patients %}
+                        <option value="{{ patient.id }}">
+                            {{ patient.name }} - {{ patient.phone }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="doctor_id">Select Doctor</label>
+                    <select name="doctor_id" id="doctor_id" required>
+                        <option value="">Choose doctor</option>
+                        {% for doctor in doctors %}
+                        <option value="{{ doctor.id }}">
+                            {{ doctor.name }} -
+                            {{ doctor.specialization }} -
+                            {{ doctor['qualification'] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="appointment_date">Appointment Date</label>
+                    <input type="date" id="appointment_date"
+                           name="appointment_date"
+                           min="{{ today }}" required>
+                </div>
+            </div>
+
+            <button type="submit">Book Appointment</button>
+        </form>
+    </section>
+
+    <!-- Appointment Records -->
+    <section class="panel">
+        <div class="section-heading no-print">
+            <h2>Appointment Records</h2>
+            <button type="button"
+                    onclick="printReport('appointmentReport')">
+                Print Appointments
+            </button>
+        </div>
+
+        <div id="appointmentReport" class="table-wrapper">
+            <header class="hospital-print-header">
+                <h1>MEDICARE HOSPITAL</h1>
+                <p><strong>Caring for Life, Every Day</strong></p>
+                <p>Main Road, Greater Noida, Uttar Pradesh</p>
+                <p>Phone: 7756895432</p>
+                <hr>
+                <h2>Appointment Records Report</h2>
+                <p>Report Date: {{ today }}</p>
+            </header>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Specialization</th>
+                        <th>Qualification</th>
+                        <th>Date</th>
+                        <th class="no-print">Individual Report</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for appointment in appointments %}
+                    <tr>
+                        <td>{{ appointment.id }}</td>
+                        <td>{{ appointment.patient_name }}</td>
+                        <td>{{ appointment.doctor_name }}</td>
+                        <td>{{ appointment.specialization }}</td>
+                        <td>{{ appointment.qualification }}</td>
+                        <td>{{ appointment.appointment_date }}</td>
+                        <td class="no-print">
+                            <a class="print-appointment-btn"
+                               href="{{ url_for('print_appointment', appointment_id=appointment.id) }}"
+                               target="_blank">
+                                Print Report
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7">No appointments found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <footer class="footer no-print">
+        <p>MediCare Hospital | Hospital Management System</p>
+    </footer>
+</main>
+
+<script>
+    document.getElementById("patientForm").addEventListener("submit", function(event) {
+        const name = document.getElementById("name").value.trim();
+        const age = Number(document.getElementById("age").value);
+        const phone = document.getElementById("phone").value.trim();
+        const problem = document.getElementById("problem").value.trim();
+
+        if (!name || !problem) {
+            event.preventDefault();
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        if (!Number.isInteger(age) || age < 0 || age > 120) {
+            event.preventDefault();
+            alert("Please enter a valid age between 0 and 120.");
+            return;
+        }
+
+        if (!/^[0-9]{10}$/.test(phone)) {
+            event.preventDefault();
+            alert("Please enter a valid 10-digit phone number.");
+        }
+    });
+
+    document.getElementById("appointmentForm").addEventListener("submit", function(event) {
+        const patient = document.getElementById("patient_id").value;
+        const doctor = document.getElementById("doctor_id").value;
+        const appointmentDate = document.getElementById("appointment_date").value;
+
+        const now = new Date();
+        const localToday = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, "0"),
+            String(now.getDate()).padStart(2, "0")
+        ].join("-");
+
+        if (!patient || !doctor || !appointmentDate) {
+            event.preventDefault();
+            alert("Please complete all appointment fields.");
+            return;
+        }
+
+        if (appointmentDate < localToday) {
+            event.preventDefault();
+            alert("Please select today or a future date.");
+        }
+    });
+
+    function printReport(reportId) {
+        const report = document.getElementById(reportId);
+
+        if (!report) {
+            alert("Report could not be found.");
+            return;
+        }
+
+        const printWindow = window.open("", "_blank", "width=900,height=650");
+
+        if (!printWindow) {
+            alert("Please allow pop-ups to print the report.");
+            return;
+        }
+
+        const hospitalHeader = report.querySelector(".hospital-print-header");
+        const reportTable = report.querySelector("table");
+
+        printWindow.document.open();
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <title>MediCare Hospital Report</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        color: #111;
+                        padding: 20px;
+                    }
+                    .hospital-print-header {
+                        display: block;
+                        text-align: center;
+                        border-bottom: 2px solid #1769aa;
+                        padding-bottom: 12px;
+                    }
+                    .hospital-print-header h1 {
+                        color: #1769aa;
+                        margin-bottom: 8px;
+                    }
+                    .hospital-print-header p {
+                        margin: 4px;
+                        font-size: 12px;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th, td {
+                        border: 1px solid #777;
+                        padding: 7px;
+                        text-align: left;
+                        font-size: 11px;
+                        overflow-wrap: anywhere;
+                    }
+                    th {
+                        background: #e5e7eb;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                    @page {
+                        size: A4;
+                        margin: 12mm;
+                    }
+                </style>
+            </head>
+            <body>
+                ${hospitalHeader ? hospitalHeader.outerHTML : ""}
+                ${reportTable ? reportTable.outerHTML : ""}
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
+
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        };
+    }
+</script>
+
+</body>
+</html>

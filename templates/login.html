@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Hospital Management</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="login-container">
+        <h1>Hospital Management System</h1>
+        <h2>Admin Login</h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <p class="flash-message">{{ message }}</p>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <label for="username">Username</label>
+            <input id="username" name="username"
+                   type="text" required maxlength="100"
+                   autocomplete="username">
+
+            <label for="password">Password</label>
+            <input id="password" name="password"
+                   type="password" required
+                   autocomplete="current-password">
+
+            <button type="submit">Login</button>
+        </form>
+
+        <p>Authorized administrators only.</p>
+    </main>
+</body>
+</html>
